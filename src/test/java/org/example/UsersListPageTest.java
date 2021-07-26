@@ -39,9 +39,9 @@ public class UsersListPageTest {
     }
     @Test
     public void checkBackButtonPresence() {
-        Assert.assertTrue(driver.findElement(By.xpath("/html/body/app-root/app-users/app-header/mat-toolbar/div/button/mat-icon")).isDisplayed());
+        Assert.assertTrue(usersList.getBackButtonElement().isDisplayed());
     }
-    @Test
+    @Test(priority = 19)
     public void checkBackButtonFunction() {
         driver.findElement(By.xpath("/html/body/app-root/app-users/app-header/mat-toolbar/div/button/mat-icon")).click();
         Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:4200/");
@@ -52,7 +52,7 @@ public class UsersListPageTest {
         Assert.assertNotNull(usersList);
     }
 
-    @Test(priority = 9)
+    @Test(priority = 18)
     public void deleteUser() {
         // getting list size for deleting last element on next step
         List<WebElement> usersList = driver.findElements(By.tagName("app-user-card"));

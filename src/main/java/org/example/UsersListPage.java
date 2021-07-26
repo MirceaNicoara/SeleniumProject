@@ -30,6 +30,8 @@ public class UsersListPage {
     private WebElement addUserButton;
     @FindBy(xpath = "/html/body/app-root/app-users/app-header/mat-toolbar/div/button/mat-icon")
     private WebElement backButtonElement;
+    @FindBy(xpath = "(//button[contains(.,'Edit')])[1]")
+    private WebElement editButton;
 
     public UsersListPage(WebDriver driver) {
         this.driver = driver;

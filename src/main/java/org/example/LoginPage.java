@@ -12,7 +12,7 @@ public class LoginPage {
     private WebDriver driver;
 
     private String baseUrl = "http://localhost:4200";
-    private String driverPath = "/home/mirceanicoara/Downloads/geckodriver-v0.29.1-linux64/geckodriver";
+    private String driverPath = "geckodriver";
 
     @FindBy(xpath = "/html/body/app-root/app-home/div/div/div[2]/div[3]/div/form/div[1]/input")
     private WebElement usernameElement;

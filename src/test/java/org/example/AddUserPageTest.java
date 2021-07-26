@@ -3,8 +3,6 @@ package org.example;
 import org.openqa.selenium.*;
 import org.openqa.selenium.UnhandledAlertException;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.interactions.Action;
-import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
@@ -15,10 +13,10 @@ import java.util.List;
 
 public class AddUserPageTest {
 
-    AddUserPage addUserObject;
     WebDriver driver;
-    RandomStringGenerator randomString = new RandomStringGenerator();
+    AddUserPage addUserObject;
     UsersListPage userListObject;
+    UserModel userModel;
 
     @BeforeTest
     public void initialSetUp() {
@@ -27,91 +25,65 @@ public class AddUserPageTest {
         driver.get("http://localhost:4200/users");
         addUserObject = new AddUserPage(driver);
         userListObject = new UsersListPage(driver);
+        userModel = addUserObject.createRandomUser();
+
     }
 
-    @Test(priority = 1)
+    @Test(priority = 9)
     public void verifyAddUserFunctionalityValidCredentials() {
-        // taking size of initial user list
-        List<WebElement> usersList = driver.findElements(By.tagName("app-user-card"));
-        int userListSizeBefore = usersList.size();
-
-        // accessing add user webpage / functionality
+        driver.get("http://localhost:4200/users");
         addUserObject.getAddUserButton().click();
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:4200/add");
-
-        // generating strings to be inserted in the required fields
-        String randomName = randomString.getRandomString();
-        String randomEmail = randomName + "_email@gmail.com";
 
         // inserting data to complete form
-        Actions builder = new Actions(driver);
-        Action addUser = builder
-                .sendKeys(addUserObject.getUsernameToAdd(), randomName)
-                .sendKeys(addUserObject.getEmailToAdd(), randomEmail)
-                .sendKeys(addUserObject.getFullNameToAdd(), randomName + " " + randomName)
-                .sendKeys(addUserObject.getPasswordToAdd(), "1aa")
-                .click(addUserObject.getTraitToAdd())
-                .click(addUserObject.getGenderToAdd())
-                .build();
-        addUser.perform();
+        addUserObject.insertCredentials(userModel.getUsername(), userModel.getEmail(), userModel.getFullName(), userModel.getPassword());
+        addUserObject.selectTraitsAndGender();
 
         // clicking Submit when becoming enabled
         WebDriverWait myWaitVariable = new WebDriverWait(driver, 5);
         myWaitVariable.until(ExpectedConditions.elementToBeClickable(By.xpath("/html/body/app-root/app-addmodal/div/div/form/button"))).click();
 
-        // counting users list after user added and comparing it to the initial count
-        usersList = driver.findElements(By.tagName("app-user-card"));
-        int usersListSizeAfter = usersList.size();
-        Assert.assertEquals(usersListSizeAfter, userListSizeBefore + 1);
+        // counting users list and comparing last element values with the newly introduced ones
+        List<WebElement> usersList = driver.findElements(By.tagName("app-user-card"));
+        int userCardNumber = usersList.size();
+        Assert.assertEquals(driver.findElement(By.xpath("/html/body/app-root/app-users/app-user-card[" + userCardNumber + "]/div/div[1]/a/h1")).getText(),
+                userModel.getFullName());
+        Assert.assertEquals(driver.findElement(By.xpath("/html/body/app-root/app-users/app-user-card[" + userCardNumber + "]/div/div[2]/span")).getText(),
+                userModel.getUsername());
+        Assert.assertEquals(driver.findElement(By.xpath("/html/body/app-root/app-users/app-user-card[" + userCardNumber + "]/div/div[3]/span")).getText(),
+                userModel.getEmail());
+        Assert.assertEquals(driver.findElement(By.xpath("/html/body/app-root/app-users/app-user-card[" + userCardNumber + "]/div/div[4]/span")).getText(),
+                userModel.getPassword());
     }
 
-    @Test(priority = 2)
+    @Test(priority = 5)
     public void verifyAddUserWithPasswordSymbols() {
-        int userListSizeBefore = initializeUserListPageAndReturnListCount();
         addUserObject.getAddUserButton().click();
-        String randomName = randomString.getRandomString();
-        String randomEmail = randomName + "_email@gmail.com";
-        Actions builder = new Actions(driver);
-        Action addUser = builder
-                .sendKeys(addUserObject.getUsernameToAdd(), randomName)
-                .sendKeys(addUserObject.getEmailToAdd(), randomEmail)
-                .sendKeys(addUserObject.getFullNameToAdd(), randomName + " " + randomName)
-                .sendKeys(addUserObject.getPasswordToAdd(), "1aa!@#")
-                .click(addUserObject.getTraitToAdd())
-                .click(addUserObject.getGenderToAdd())
-                .build();
-        addUser.perform();
-        /* code commented failled because password field does not accept symbol characters input
+        addUserObject.insertCredentials(userModel.getUsername(), userModel.getEmail(), userModel.getFullName(), userModel.getPassword() + "!@#");
+        addUserObject.selectTraitsAndGender();
+
+        /* bellow commented code failed because password field does not accept symbol characters input
+
         WebDriverWait myWaitVariable = new WebDriverWait(driver, 5);
         myWaitVariable.until(ExpectedConditions.elementToBeClickable(By.xpath("/html/body/app-root/app-addmodal/div/div/form/button"))).click();
         int usersListSizeAfter = driver.findElements(By.tagName("app-user-card")).size();
-        Assert.assertEquals(usersListSizeAfter, userListSizeBefore + 1); */
+        Assert.assertEquals(usersListSizeAfter, userListSizeBefore + 1);
+
+        */
 
         // checking Submit button gets enabled
         boolean submitButtonStatus = driver.findElement(By.xpath("/html/body/app-root/app-addmodal/div/div/form/button")).isEnabled();
         Assert.assertTrue(submitButtonStatus);
+
     }
 
-    @Test(priority = 8)
+    @Test(priority = 1)
     public void verifyAddUserWithMarkedMandatoryFields() {
-        int listSizeBefore = initializeUserListPageAndReturnListCount();
 
         // accessing add user webpage / functionality
         addUserObject.getAddUserButton().click();
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:4200/add");
-
-        // generating strings to be inserted in the required fields
-        String randomName = randomString.getRandomString();
-        String randomEmail = randomName + "_email@gmail.com";
 
         // inserting data to complete form
-        Actions builder = new Actions(driver);
-        Action addUser = builder
-                .sendKeys(addUserObject.getUsernameToAdd(), randomName)
-                .sendKeys(addUserObject.getEmailToAdd(), randomEmail)
-                .sendKeys(addUserObject.getPasswordToAdd(), "1aa")
-                .build();
-        addUser.perform();
+        addUserObject.insertCredentials(userModel.getUsername(), userModel.getEmail(), "", userModel.getPassword());
 
         // clicking Submit when becoming enabled
         WebDriverWait myWaitVariable = new WebDriverWait(driver, 5);
@@ -124,99 +96,47 @@ public class AddUserPageTest {
             unhandledAlertException.printStackTrace();
         }
 
-        //counting users list after user added and comparing it to the initial count
-        int listSizeAfter = initializeUserListPageAndReturnListCount();
-        Assert.assertEquals(listSizeAfter, listSizeBefore + 1);
+        driver.get("http://localhost:4200/users");
     }
 
-    @Test(priority = 9)
+    @Test(priority = 4)
     public void verifyAddUserWithJustUnmarkedMandatoryFields() {
-        int listSizeBefore = initializeUserListPageAndReturnListCount();
         addUserObject.getAddUserButton().click();
-        Assert.assertEquals(driver.getCurrentUrl(), "http://localhost:4200/add");
-
-        //generating strings to be inserted in the required fields
-        String randomName = randomString.getRandomString();
-        String randomEmail = randomName + "_email@gmail.com";
 
         // inserting data to complete form
-        Actions builder = new Actions(driver);
-        Action addUser = builder
-                .sendKeys(addUserObject.getFullNameToAdd(), randomName + " " + randomName)
-                .click(addUserObject.getTraitToAdd())
-                .click(addUserObject.getGenderToAdd())
-                .build();
-        addUser.perform();
+        addUserObject.insertCredentials("", "", userModel.getFullName(), "");
+        addUserObject.selectTraitsAndGender();
 
         // checking Submit button remains disabled
         boolean submitButtonStatus = driver.findElement(By.xpath("/html/body/app-root/app-addmodal/div/div/form/button")).isEnabled();
         Assert.assertFalse(submitButtonStatus);
+
+        driver.get("http://localhost:4200/users");
     }
-
-
 
     @Test(priority = 2)
     public void verifyAddUserFunctionalityUsernameDuplicate() {
-        initializeUserListPageAndReturnListCount();
-        // getting existing username
         String usernameCard1 = userListObject.getUsername().getText();
-
         addUserObject.getAddUserButton().click();
-        String randomFullName = randomString.getRandomString() + randomString.getRandomString();
-        String randomEmail = randomFullName + "_email@gmail.com";
-        Actions builder = new Actions(driver);
-        Action addUser = builder
-                .sendKeys(addUserObject.getUsernameToAdd(), usernameCard1)
-                .sendKeys(addUserObject.getEmailToAdd(), randomEmail)
-                .sendKeys(addUserObject.getFullNameToAdd(), randomFullName)
-                .sendKeys(addUserObject.getPasswordToAdd(), "1aa")
-                .click(addUserObject.getTraitToAdd())
-                .click(addUserObject.getGenderToAdd())
-                .build();
-        addUser.perform();
+        addUserObject.insertCredentials(usernameCard1, usernameCard1 + userModel.getEmail(), userModel.getFullName(), userModel.getPassword());
+        addUserObject.selectTraitsAndGender();
         WebDriverWait myWaitVariable = new WebDriverWait(driver, 5);
         myWaitVariable.until(ExpectedConditions.elementToBeClickable(By.xpath("/html/body/app-root/app-addmodal/div/div/form/button"))).click();
-
         String alertMessage = driver.switchTo().alert().getText();
         Assert.assertEquals(alertMessage, "Http failure response for http://localhost:8080/api/form/users: 400 OK");
         driver.switchTo().alert().accept();
-        addUserObject.getCloseAddModalButton().click();
-    }
+        driver.get("http://localhost:4200/users");    }
 
     @Test(priority = 3)
     public void verifyAddUserFunctionalityEmailDuplicate() {
-        initializeUserListPageAndReturnListCount();
-        // getting existing email
         String emailCard1 = userListObject.getEmail().getText();
-
         addUserObject.getAddUserButton().click();
-        String randomName = randomString.getRandomString();
-        Actions builder = new Actions(driver);
-        Action addUser = builder
-                .sendKeys(addUserObject.getUsernameToAdd(), randomName)
-                .sendKeys(addUserObject.getEmailToAdd(), emailCard1)
-                .sendKeys(addUserObject.getFullNameToAdd(), randomName + " " + randomName)
-                .sendKeys(addUserObject.getPasswordToAdd(), "1aa")
-                .click(addUserObject.getTraitToAdd())
-                .click(addUserObject.getGenderToAdd())
-                .build();
-        addUser.perform();
+        addUserObject.insertCredentials(userModel.getUsername(), emailCard1, userModel.getFullName(), userModel.getPassword());
+        addUserObject.selectTraitsAndGender();
         WebDriverWait myWaitVariable = new WebDriverWait(driver, 5);
         myWaitVariable.until(ExpectedConditions.elementToBeClickable(By.xpath("/html/body/app-root/app-addmodal/div/div/form/button"))).click();
-
         String alertMessage = driver.switchTo().alert().getText();
         Assert.assertEquals(alertMessage, "Http failure response for http://localhost:8080/api/form/users: 400 OK");
         driver.switchTo().alert().accept();
-        addUserObject.getCloseAddModalButton().click();
-    }
-
-    private int initializeUserListPageAndReturnListCount() {
-        driver.get("http://localhost:4200/users");
-
-        //taking size of initial user list
-        List<WebElement> usersList = driver.findElements(By.tagName("app-user-card"));
-        int userListSizeBefore = usersList.size();
-        return userListSizeBefore;
-    }
-
+        driver.get("http://localhost:4200/users");    }
 }

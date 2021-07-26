@@ -2,8 +2,8 @@ package org.example;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.interactions.Action;
 import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.remote.server.handler.SendKeys;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
@@ -15,7 +15,8 @@ public class EditUserPageTest {
     EditUserPage editUserPageObject;
     UsersListPage usersListPageObject;
     WebDriver driver;
-    RandomStringGenerator randomString = new RandomStringGenerator();
+    AddUserPage addUserPageObject;
+    UserModel userModel;
 
     @BeforeTest
     public void initialSetUp() {
@@ -24,6 +25,8 @@ public class EditUserPageTest {
         driver.get("http://localhost:4200/users");
         editUserPageObject = new EditUserPage(driver);
         usersListPageObject = new UsersListPage(driver);
+        addUserPageObject = new AddUserPage(driver);
+        userModel = addUserPageObject.createRandomUser();
     }
 
     @Test(priority = 5)
@@ -42,32 +45,9 @@ public class EditUserPageTest {
         // clearing fields
         editUserPageObject.clearEditForm();
 
-        // creating necessary strings
-        String randomName = randomString.getRandomString();
-        String randomEmail = randomName + "_email@gmail.com";
-
         // inserting new values
-        Actions builder = new Actions(driver);
-        Action addUser = builder
-                .sendKeys(editUserPageObject.getUsernameToEdit(), randomName)
-                .sendKeys(editUserPageObject.getEmailToEdit(), randomEmail)
-                .sendKeys(editUserPageObject.getFullNameToEdit(), randomName + " " + randomName)
-                .sendKeys(editUserPageObject.getPasswordToEdit(), "1a")
-                .build();
-        addUser.perform();
-//
-//        try {
-//            Thread.sleep(5000);
-//        } catch (InterruptedException exception) {
-//            exception.printStackTrace();
-//        }
-//
-//        // selecting new values for traits and gender
-//        WebElement traitSelected = randomSelectTraitToCheck();
-//        traitSelected.click();
-//        WebElement genderSelected = randomSelectGenderToCheck();
-//        genderSelected.click();
-//
+        addUserPageObject.insertCredentials(userModel.getUsername(), userModel.getEmail(), userModel.getFullName(), userModel.getPassword());
+        addUserPageObject.selectTraitsAndGender();
 
         // submitting form
         myWaitVariable.until(ExpectedConditions.elementToBeClickable(By.xpath("/html/body/app-root/app-editmodal/div/div/form/button/span[1]"))).click();
@@ -75,15 +55,13 @@ public class EditUserPageTest {
 
         // checking values
         Assert.assertEquals(driver.findElement(By.xpath("/html/body/app-root/app-users/app-user-card[" + userToBeEditedId + "]/div/div[1]/a/h1")).getText(),
-                randomName + " " + randomName);
+                userModel.getFullName());
         Assert.assertEquals(driver.findElement(By.xpath("/html/body/app-root/app-users/app-user-card[" + userToBeEditedId + "]/div/div[2]/span")).getText(),
-                randomName);
+                userModel.getUsername());
         Assert.assertEquals(driver.findElement(By.xpath("/html/body/app-root/app-users/app-user-card[" + userToBeEditedId + "]/div/div[3]/span")).getText(),
-                randomEmail);
+                userModel.getEmail());
         Assert.assertEquals(driver.findElement(By.xpath("/html/body/app-root/app-users/app-user-card[" + userToBeEditedId + "]/div/div[4]/span")).getText(),
-                "1a");
-//        Assert.assertTrue(traitSelected.isSelected());
-//        Assert.assertTrue(genderSelected.isSelected());
+                userModel.getPassword());
     }
 
     @Test(priority = 7)
@@ -102,15 +80,7 @@ public class EditUserPageTest {
         // clearing fields
         editUserPageObject.clearInputFields();
 
-        myWaitVariable.until(ExpectedConditions.elementToBeClickable(editUserPageObject.getSubmitButton()));
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException exception) {
-            exception.printStackTrace();
-        }
-//        editUserPage.getSubmitButton().click();
-        driver.findElement(By.xpath("/html/body/app-root/app-editmodal/div/div/form/button/span[1]")).click();
-
+        myWaitVariable.until(ExpectedConditions.elementToBeClickable(editUserPageObject.getSubmitButton())).click();
         myWaitVariable.until(ExpectedConditions.urlContains("http://localhost:4200/users"));
 
         Assert.assertNotEquals(driver.findElement(By.xpath("/html/body/app-root/app-users/app-user-card[" + userToBeEditedId + "]/div/div[1]/a/h1")).getText(),
@@ -124,7 +94,7 @@ public class EditUserPageTest {
     @Test(priority = 6)
     public void checkEditUserWithInvalidEmail() { // invalid email = not containing @{domain}.{domain}
         initializeUserListPage();
-        driver.findElement(By.xpath("/html/body/app-root/app-users/app-user-card[1]/div/div[7]/button[1]")).click();
+        usersListPageObject.getEditButton().click();
         editUserPageObject.getEmailToEdit().clear();
         editUserPageObject.getEmailToEdit().sendKeys("emailTest");
         editUserPageObject.getSubmitButton().click();
@@ -134,11 +104,19 @@ public class EditUserPageTest {
     @Test(priority = 6)
     public void checkEditUserWithInvalidUsername() { // invalid = blank space inside username
         initializeUserListPage();
-        driver.findElement(By.xpath("/html/body/app-root/app-users/app-user-card[1]/div/div[7]/button[1]")).click();
+        usersListPageObject.getEditButton().click();
         editUserPageObject.getUsernameToEdit().clear();
-        editUserPageObject.getUsernameToEdit().sendKeys("!@#$   !@#");
+        editUserPageObject.getUsernameToEdit().sendKeys("!@#");
+//        editUserPageObject.getUsernameToEdit().sendKeys(Keys.SPACE);
+//        editUserPageObject.getUsernameToEdit().sendKeys(Keys.SPACE);
+//        editUserPageObject.getUsernameToEdit().sendKeys(Keys.SPACE);
+        Actions action = new Actions(driver);
+        action.sendKeys(Keys.SPACE).build().perform();
+        action.sendKeys(Keys.SPACE).build().perform();
+        action.sendKeys(Keys.SPACE).build().perform();
+        editUserPageObject.getUsernameToEdit().sendKeys("!@#");
         editUserPageObject.getSubmitButton().click();
-        Assert.assertNotEquals(usersListPageObject.getAddUserButton().getText(), "!@#$   !@#");
+        Assert.assertNotEquals(usersListPageObject.getAddUserButton().getText(), "!@# !@#");
     }
 
     @Test
